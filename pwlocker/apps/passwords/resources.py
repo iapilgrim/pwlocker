@@ -57,7 +57,7 @@ class PasswordResource(ModelResource):
         """
         Returns True if this resource was created by the current user.
         """
-        return instance.created_by == CurrentUserSingleton.user
+        return instance.created_by == obj.request.user.pk
 
     def url(self, instance):
         """

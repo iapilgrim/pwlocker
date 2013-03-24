@@ -68,7 +68,18 @@ from apps.passwords.models import Password, PasswordContact
 #                del data[key]
 #
 #        return super(PasswordContactResource, self).validate_request(data, files)
-    
+
+class CurrentUserSingleton(object):
+    """
+    Literally the only way I can find to give the PasswordResource access
+    to the current user object.
+    """
+    user = None
+
+    @classmethod
+    def set_user(cls, user):
+        cls.user = user
+            
 class PasswordContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = PasswordContact
@@ -76,8 +87,34 @@ class PasswordContactSerializer(serializers.ModelSerializer):
         fields = ('id', 'url', ('to_user', 'UserResource'), ('from_user', 'UserResource'))
     
 class PasswordSerializer(serializers.ModelSerializer):
+    is_owner = serializers.SerializerMethodField('is_owner_fn')
+    resource_url = serializers.SerializerMethodField('resource_url')
     class Meta:
         model = Password
-        exclude = ('created_by',)
+#        exclude = ('created_by',)
+        read_only_fields = ('id',)
         fields = ('id', 'title', 'username', 'password', 'url', 'notes',
-                'resource_url', 'shares', 'is_owner')  
+                'shares','created_by','is_owner')          
+    #TODO: add these method fields
+    def is_owner_fn(self, obj):
+        """
+        Returns True if this resource was created by the current user.
+        """
+        print 'inside is_owner '
+        return obj.created_by == CurrentUserSingleton.user
+
+    def url(self, obj):
+        """
+        Return the instance URL. If we don't specify this, django rest
+        framework will return a generated URL to the resource
+        """
+        print 'abc'
+        return obj.url
+
+    def resource_url(self, instance):
+        """
+        An alternative to the 'url' attribute django rest framework will
+        add to the model.
+        """
+        return reverse('passwords_api_instance',
+                       kwargs={'id': instance.id})        

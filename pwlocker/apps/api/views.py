@@ -63,22 +63,46 @@ class PasswordListView(RestrictPasswordToUserMixin, ListCreateAPIView):
     model = Password
     serializer_class = PasswordSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-
+  
+    def post(self, request, format=None):
+        
+#        update_data = request.DATA
+        update_data = request.DATA
+        
+        update_data.update({'created_by':request.user.pk})
+        print 'data: ', update_data
+        serializer = PasswordSerializer(data=update_data)
+        if serializer.is_valid():
+#            content['created_by'] = self.user
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class PasswordInstanceView(RestrictPasswordToUserMixin, RetrieveUpdateDestroyAPIView):
     """
     View for individual Password instances
     """
-#    resource = PasswordResource
-#    permissions = (IsAuthenticated, )
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    
     model = Password
     serializer_class = PasswordSerializer
-    def put(self, request, pk, format=None):
-        password = self.get_object(pk)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    
+    def get_object(self, pk):
+        try:
+            return Password.objects.get(pk=pk)
+        except Snippet.DoesNotExist:
+            raise Http404    
+        
+    def put(self, request, id, format=None):
+        print 'call put ....'
+        password = self.get_object(id)
         serializer = PasswordSerializer(password, data=request.DATA)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+        
+        else:
+            print 'data is not valid'
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 #    def put(self, request, *args, **kwargs):
@@ -115,8 +139,8 @@ class PasswordInstanceView(RestrictPasswordToUserMixin, RetrieveUpdateDestroyAPI
 #            instance.delete()
 #        else:
 #            raise ErrorResponse(status.HTTP_401_UNAUTHORIZED, None, {})
-    def delete(self, request, pk, format=None):
-        password = self.get_object(pk)
+    def delete(self, request, id, format=None):
+        password = self.get_object(id)
         password.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -183,7 +207,7 @@ class PasswordContactReadOrDeleteInstanceView(ReadOnlyInstanceModelView):
 #        return
 
 
-class UserView(RetrieveModelMixin, CreateModelMixin, SingleObjectAPIView):
+class UserView(RetrieveUpdateDestroyAPIView):
     """
     View for individual Users lets users find other users by username
     """
@@ -192,9 +216,19 @@ class UserView(RetrieveModelMixin, CreateModelMixin, SingleObjectAPIView):
     model = User
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    def get_queryset(self):
-        """
-        Filter the current user from search results to prevent them sharing
-        with themselves.
-        """
-        return self.model.objects.filter(~Q(id=self.user.id))
+    #TODO implement this
+#    def get_queryset(self):
+#        """
+#        Filter the current user from search results to prevent them sharing
+#        with themselves.
+#        """
+#        return self.model.objects.filter(~Q(id=self.user.id))
+    def get_object(self, username):
+        try:
+            return User.objects.filter(username=username)
+        except Snippet.DoesNotExist:
+            raise Http404   
+    def get(self, request, username, format=None):
+        user = self.get_object(username)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
