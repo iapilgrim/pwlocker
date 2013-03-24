@@ -134,7 +134,7 @@ INSTALLED_APPS = (
     'sekizai',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
-    'djangorestframework',
+    'rest_framework',
     'apps.passwords',
 )
 

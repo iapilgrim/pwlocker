@@ -47,8 +47,8 @@ def create_directories(path, user, permission='0750', group=None):
     else:
         sudo("mkdir -p %s" % path)
 
-    sudo("chown -R %s:%s %s" % (user, group, path))
-    sudo("chmod -R %s %s" % (permission, path))
+#    sudo("chown -R %s:%s %s" % (user, group, path))
+#    sudo("chmod -R %s %s" % (permission, path))
 
 def activate_venv():
     """
